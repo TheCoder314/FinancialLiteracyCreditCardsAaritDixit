@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Swipe Smart</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: a single reading column punctuated by "card face" panels and statement-style tables; numbers set in mono like a billing statement. */
+:root{
+  --paper:#F4F6F2; --surface:#FFFFFF; --ink:#14211D; --muted:#55645E; --line:#D6DDD8;
+  --accent:#0E7457; --accent-soft:#DDEFE7; --warn:#B9442C; --warn-soft:#F7E3DD; --gold:#A87A1E; --gold-soft:#F5EBD3;
+  --card-a1:#103B33; --card-a2:#1F6B57; --card-b1:#2B2140; --card-b2:#5B4A86;
+  --display:"Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --body:var(--display);
+  --mono:var(--display);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#0F1513; --surface:#17201D; --ink:#E6EDE9; --muted:#9BABA4; --line:#2B3833;
+  --accent:#4CC79D; --accent-soft:#163A2E; --warn:#F0866D; --warn-soft:#3D211A; --gold:#E0B75C; --gold-soft:#3A2F15;
+  --card-a1:#0C2E28; --card-a2:#1A5A49; --card-b1:#221A33; --card-b2:#4A3C70; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --paper:#0F1513; --surface:#17201D; --ink:#E6EDE9; --muted:#9BABA4; --line:#2B3833;
+  --accent:#4CC79D; --accent-soft:#163A2E; --warn:#F0866D; --warn-soft:#3D211A; --gold:#E0B75C; --gold-soft:#3A2F15;
+  --card-a1:#0C2E28; --card-a2:#1A5A49; --card-b1:#221A33; --card-b2:#4A3C70; color-scheme:dark }
+
+*,*::before,*::after{box-sizing:border-box;border-radius:0 !important}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:960px;margin:0 auto;padding-block:24px 64px;display:flex;flex-direction:column;gap:72px}
+h1,h2,h3{font-family:var(--display);line-height:1.1;text-wrap:balance;margin:0}
+h1{font-size:clamp(2.4rem,7vw,4.4rem);font-weight:800;letter-spacing:-.02em}
+h2{font-size:clamp(1.7rem,4vw,2.4rem);font-weight:700;letter-spacing:-.01em}
+h3{font-size:1.2rem;font-weight:700}
+p{margin:0;max-width:65ch}
+a{color:var(--accent);text-underline-offset:3px}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:2px;border-radius:4px}
+.eyebrow{font-family:var(--mono);font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+section{display:flex;flex-direction:column;gap:22px}
+.lede{font-size:1.15rem;color:var(--muted)}
+
+/* nav */
+nav{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.92rem;border-bottom:1px solid var(--line);padding-bottom:12px}
+nav a{color:var(--muted);text-decoration:none}
+nav a:hover{color:var(--accent)}
+.brand{font-family:var(--display);font-weight:800;color:var(--ink);margin-right:auto}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1fr;gap:40px}
+.hero > div{min-width:0;display:flex;flex-direction:column;gap:18px}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.stack{position:relative;height:270px}
+.cc{position:absolute;width:min(330px,100%);aspect-ratio:1.586;border-radius:16px;padding:20px 22px;color:#F3F6F4;
+  display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 18px 40px -18px rgba(0,0,0,.45);max-width:100%}
+.cc.a{background:linear-gradient(135deg,var(--card-a1),var(--card-a2));top:0;left:0;transform:rotate(-6deg)}
+.cc.b{background:linear-gradient(135deg,var(--card-b1),var(--card-b2));top:60px;right:0;transform:rotate(4deg)}
+.chip{width:42px;height:32px;border-radius:6px;background:linear-gradient(135deg,#E9CF8A,#B48A2E)}
+.cc .pan{font-family:var(--mono);letter-spacing:.14em;font-size:1rem}
+.cc .row{display:flex;justify-content:space-between;align-items:flex-end;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;gap:8px}
+.cc .apr{font-family:var(--mono);font-size:1.25rem;letter-spacing:0;text-transform:none}
+
+/* factor grid */
+.factors{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.factor{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.factor .k{font-family:var(--mono);font-size:1.6rem;font-weight:600;color:var(--accent)}
+.factor p{color:var(--muted);font-size:.98rem}
+.factor .ask{font-size:.92rem;color:var(--ink);border-top:1px dashed var(--line);padding-top:8px;margin-top:auto}
+
+/* schumer table */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:.96rem}
+th,td{text-align:left;padding:13px 16px;border-bottom:1px solid var(--line);vertical-align:top}
+thead th{font-family:var(--display);font-size:1.05rem;background:var(--accent-soft)}
+tbody th{font-family:var(--mono);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;width:24%}
+tr:last-child th,tr:last-child td{border-bottom:0}
+.tag{display:inline-block;font-size:.78rem;padding:2px 8px;border-radius:999px;font-weight:600;margin-right:6px}
+.tag.good{background:var(--accent-soft);color:var(--accent)}
+.tag.bad{background:var(--warn-soft);color:var(--warn)}
+.note{font-size:.88rem;color:var(--muted)}
+
+/* charts */
+.chart{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.chart svg{width:100%;height:auto;display:block}
+.chart svg text{fill:var(--muted);font-family:var(--mono);font-size:12px}
+.chart svg .lbl{fill:var(--ink);font-family:var(--body);font-size:13px;font-weight:600}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.9rem}
+.legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px;background:var(--c)}
+
+.verdict{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.verdict > div{border-left:4px solid var(--c);padding:4px 0 4px 16px;min-width:0}
+.verdict p{font-size:.98rem;color:var(--muted)}
+
+/* habits */
+.habits{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(2,1fr);gap:0 32px;counter-reset:h}
+.habits li{counter-increment:h;display:grid;grid-template-columns:44px 1fr;gap:4px 12px;padding:18px 0;border-top:1px solid var(--line);min-width:0}
+.habits li::before{content:counter(h,decimal-leading-zero);font-family:var(--mono);color:var(--gold);font-weight:600;grid-row:span 2;font-size:1.05rem}
+.habits p{color:var(--muted);font-size:.98rem}
+
+/* scenario */
+.scenario{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:clamp(18px,4vw,36px);display:flex;flex-direction:column;gap:22px}
+.facts{display:flex;flex-wrap:wrap;gap:10px}
+.fact{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:8px 14px;font-size:.92rem}
+.fact b{font-family:var(--mono);font-size:1.05rem;display:block}
+.util{display:flex;flex-direction:column;gap:6px}
+.bar{height:14px;border-radius:999px;background:var(--line);overflow:hidden;position:relative}
+.bar i{position:absolute;inset:0 auto 0 0;width:60%;background:linear-gradient(90deg,var(--accent) 0 50%,var(--gold) 50% 75%,var(--warn) 75%);background-size:166.7% 100%}
+.bar b{position:absolute;left:30%;top:-3px;bottom:-3px;width:2px;background:var(--ink)}
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.plan{border:1px solid var(--line);border-top:4px solid var(--c);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.plan .big{font-family:var(--mono);font-size:1.5rem;font-weight:600}
+.plan p{font-size:.93rem;color:var(--muted)}
+.advice{background:var(--accent-soft);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:10px}
+.advice ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:8px}
+
+/* calculator */
+.calc{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:end}
+.calc label{display:flex;flex-direction:column;gap:4px;font-size:.88rem;color:var(--muted);font-weight:600}
+.calc input{font-family:var(--mono);font-size:1.05rem;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);width:100%}
+.out{font-size:1.05rem;padding:14px 16px;border-radius:10px;background:var(--gold-soft)}
+
+/* resources */
+.res{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.res a{display:flex;flex-direction:column;gap:2px;padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--surface);text-decoration:none;color:var(--ink);min-width:0}
+.res a:hover{border-color:var(--accent)}
+.res small{color:var(--muted);font-size:.9rem}
+.res .host{font-family:var(--mono);font-size:.78rem;color:var(--accent)}
+.sources{font-size:.9rem;color:var(--muted);padding-left:1.2em;display:flex;flex-direction:column;gap:4px;margin:0}
+footer{font-size:.85rem;color:var(--muted);border-top:1px solid var(--line);padding-top:18px}
+
+@media (max-width:720px){
+  .hero,.factors,.verdict,.habits,.plans,.calc,.res{grid-template-columns:1fr}
+  .stack{height:250px}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<nav aria-label="Sections">
+  <span class="brand">Swipe Smart</span>
+  <a href="#choose">Choosing</a><a href="#compare">Compare</a><a href="#habits">Habits</a><a href="#scenario">Scenario</a><a href="#resources">Resources</a>
+</nav>
+
+<header class="hero">
+  <div>
+    <span class="eyebrow">A first-card guide for young adults</span>
+    <h1>Every credit card purchase is a short-term <em>loan</em>.</h1>
+    <p class="lede">A credit card can help a young adult build a credit history and earn cash back. It can also become expensive, since most student cards charge around 25% interest on unpaid balances. This guide covers how to choose a first card and how to use it responsibly.</p>
+  </div>
+</header>
+
+<section id="choose">
+  <h2>Choosing a Credit Card</h2>
+  <p>Card issuers are required to list rates and fees in a standard table called the <b>Schumer box</b>. When comparing cards, four factors are the most important.</p>
+  <div class="factors">
+    <div class="factor"><span class="k">APR</span><h3>Annual Percentage Rate</h3>
+      <p>APR is the yearly interest rate charged on any balance left unpaid after the due date. Most student cards have a variable APR, which changes along with the prime rate. A cardholder who pays the full statement balance every month never pays this interest.</p></div>
+    <div class="factor"><span class="k">$0</span><h3>Annual fee</h3>
+      <p>Some cards charge a yearly fee just to keep the account open. Most good first cards have no annual fee. Other fees to check include late fees, foreign transaction fees, and cash advance fees.</p></div>
+    <div class="factor"><span class="k">1–5%</span><h3>Rewards</h3>
+      <p>Many cards give back cash, points, or miles on purchases. <b>Flat-rate</b> cards pay the same rate on everything. <b>Rotating-category</b> cards pay more on certain types of purchases, but the cardholder has to activate the categories each quarter. Interest charges quickly cancel out any rewards.</p></div>
+    <div class="factor"><span class="k">$500+</span><h3>Credit limit</h3>
+      <p>The credit limit is the maximum balance allowed on the card. First cards often start between $300 and $1,000. <b>Credit utilization</b> (balance divided by limit) has a large effect on credit scores, so it is best kept under 30%, and ideally under 10%.</p></div>
+  </div>
+</section>
+
+<section id="compare">
+  <h2>Comparing Two Credit Cards</h2>
+  <p>Both cards are designed for students with little or no credit history, and neither has an annual fee. The main differences are how they pay rewards and whether they offer an interest-free introductory period.</p>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th scope="col"></th><th scope="col">Discover it® Student Cash Back</th><th scope="col">Capital One Quicksilver Student</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Purchase APR</th><td class="num">About 16.49%–27.24% variable</td><td class="num">About 18.49%–28.49% variable</td></tr>
+        <tr><th scope="row">Intro APR</th><td><span class="tag good">0% for 6 months</span> on purchases, then the variable rate</td><td><span class="tag bad">None</span> standard rate from day one</td></tr>
+        <tr><th scope="row">Annual fee</th><td class="num">$0</td><td class="num">$0</td></tr>
+        <tr><th scope="row">Foreign transaction fee</th><td class="num">$0</td><td class="num">$0</td></tr>
+        <tr><th scope="row">Rewards</th><td>5% on rotating quarterly categories (up to $1,500 per quarter, must activate), 1% on everything else</td><td>Flat 1.5% on every purchase, no categories to track</td></tr>
+        <tr><th scope="row">Welcome bonus</th><td>Cashback Match: Discover matches all cash back earned in the first year</td><td>$50 after spending $100 in the first 3 months</td></tr>
+        <tr><th scope="row">Other perks</th><td>First late fee is waived; free FICO score on statements</td><td>$0 fraud liability; card lock in the app</td></tr>
+        <tr><th scope="row">Drawbacks</th><td><span class="tag bad">Effort</span> Categories must be activated every quarter, and Discover is less widely accepted abroad</td><td><span class="tag bad">Lower ceiling</span> No bonus categories and no 0% intro period</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">Rates are variable and differ slightly across sources; ranges above reflect issuer and Experian listings checked in October 2026. Each applicant's exact APR depends on their credit. Current terms should be confirmed on the issuer's website before applying.</p>
+
+  <div class="chart">
+    <h3>Estimated cash back by card</h3>
+    <p class="note">Example student spending $500 a month ($6,000 a year), with $150 a month landing in Discover's 5% categories. Paid in full every month, so no interest.</p>
+    <div class="legend"><span style="--c:var(--card-a2)">Discover it Student</span><span style="--c:var(--card-b2)">Quicksilver Student</span></div>
+    <svg id="rewardsChart" viewBox="0 0 640 260" role="img" aria-label="Bar chart: Year one, Discover earns $264 and Quicksilver earns $140. Year two, Discover earns $132 and Quicksilver earns $90."></svg>
+  </div>
+
+  <div class="verdict">
+    <div style="--c:var(--card-a2)"><h3>Discover is a better fit for…</h3><p>students who will remember to activate categories each quarter, or who plan a larger purchase they want to pay off during the 6-month 0% period.</p></div>
+    <div style="--c:var(--card-b2)"><h3>Quicksilver is a better fit for…</h3><p>students who want simple rewards with nothing to track and who always pay in full, so the lack of an intro APR does not matter.</p></div>
+  </div>
+</section>
+
+<section id="habits">
+  <h2>Smart Credit Habits</h2>
+  <ol class="habits">
+    <li><h3>Pay the full statement balance</h3><p>Paying the full balance by the due date avoids interest completely because of the grace period. Paying only the minimum on $600 can raise the total cost to about $840.</p></li>
+    <li><h3>Use autopay</h3><p>Setting autopay for at least the minimum payment prevents missed due dates. Payment history is the largest factor in a FICO score, and a single payment that is 30 days late can stay on a credit report for seven years.</p></li>
+    <li><h3>Keep utilization under 30%</h3><p>On a $1,000 limit, this means keeping the balance under $300 when the statement closes. A lower balance is better for the credit score.</p></li>
+    <li><h3>Only charge what can already be paid</h3><p>A good rule is to treat a credit card like a debit card. If a purchase could not be paid in cash today, it should not go on the card.</p></li>
+    <li><h3>Avoid cash advances</h3><p>Cash advances come with an upfront fee and a higher APR (around 28% on these cards). Interest also starts right away, with no grace period.</p></li>
+    <li><h3>Check statements and credit reports</h3><p>Reviewing charges each month helps catch fraud early. Free credit reports from AnnualCreditReport.com show whether everything on file is accurate.</p></li>
+  </ol>
+</section>
+
+<section id="scenario">
+  <h2>Real-Life Scenario</h2>
+  <div class="scenario">
+    <p>A friend has a credit card with a $1,000 limit and wants to buy a $600 item. The friend can only pay $100 per month.</p>
+    <div class="facts">
+      <div class="fact">Credit limit<b>$1,000</b></div>
+      <div class="fact">Purchase<b>$600</b></div>
+      <div class="fact">Can pay<b>$100 / month</b></div>
+      <div class="fact">Assumed APR<b>25%</b></div>
+    </div>
+    <div class="util">
+      <strong>Issue 1: Utilization rises to 60%</strong>
+      <div class="bar" role="img" aria-label="Utilization bar at 60 percent, with a marker at 30 percent"><i></i><b></b></div>
+      <p class="note">The marker shows the 30% guideline. A 60% balance can lower a credit score while it is being paid down. The score usually recovers once the balance drops.</p>
+    </div>
+    <div>
+      <strong>Issue 2: Interest costs depend on the payment plan</strong>
+    </div>
+    <div class="plans">
+      <div class="plan" style="--c:var(--warn)"><h3>Minimum payments</h3><span class="big" id="p1">—</span><p id="p1d">Paying about $25 a month at 25% APR.</p></div>
+      <div class="plan" style="--c:var(--gold)"><h3>$100 a month at 25%</h3><span class="big" id="p2">—</span><p id="p2d">Paying $100 a month on a regular card.</p></div>
+      <div class="plan" style="--c:var(--accent)"><h3>$100 a month at 0% intro</h3><span class="big" id="p3">$0 interest</span><p>With a 6-month 0% intro APR, six payments of $100 pay off the full amount before the promotion ends.</p></div>
+    </div>
+    <div class="chart" style="padding:0;border:0">
+      <div class="legend"><span style="--c:var(--warn)">Minimum ($25/mo)</span><span style="--c:var(--gold)">$100/mo at 25%</span><span style="--c:var(--accent)">$100/mo at 0%</span></div>
+      <svg id="payoffChart" viewBox="0 0 640 280" role="img" aria-label="Line chart of balance over months for the three payment plans"></svg>
+    </div>
+    <div class="advice">
+      <ol>
+        <li><b>Best option: save first.</b> Setting aside $100 a month for six months and paying cash means no interest and no effect on the credit score.</li>
+        <li><b>If the item is needed now, a 0% intro APR card is the next best choice,</b> with an automatic $100 monthly payment. Six payments cover the $600 just before the promotion ends. It is important to note the end date, because any remaining balance will start collecting interest at the regular rate.</li>
+        <li><b>On a regular card, $100 a month still works,</b> but it adds about $48 in interest and one extra month. New charges should be avoided until the balance is paid off, or utilization will climb even higher.</li>
+        <li><b>Minimum payments should be avoided.</b> They stretch the payoff to almost three years and add about $240 in interest.</li>
+      </ol>
+      <p><b>Reasoning:</b> The card has enough room for the $600 purchase, but the real costs are interest and a temporary drop in the credit score. A plan that clears the balance before interest builds up limits both.</p>
+    </div>
+    <div>
+      <h3>Payoff calculator</h3>
+      <div class="calc" style="margin-top:12px">
+        <label for="cAmt">Purchase ($)<input id="cAmt" type="number" min="1" value="600"></label>
+        <label for="cApr">APR (%)<input id="cApr" type="number" min="0" step="0.1" value="25"></label>
+        <label for="cPay">Monthly payment ($)<input id="cPay" type="number" min="1" value="100"></label>
+      </div>
+      <p class="out" id="cOut" style="margin-top:12px;max-width:none"></p>
+    </div>
+  </div>
+</section>
+
+<section id="resources">
+  <h2>Helpful Resources</h2>
+  <p>Reliable websites where consumers can research and compare credit cards.</p>
+  <div class="res">
+    <a href="https://www.consumerfinance.gov/consumer-tools/credit-cards/" target="_blank" rel="noopener"><span class="host">consumerfinance.gov</span><strong>CFPB: Credit cards</strong><small>Government guide to card terms, fees, and consumer rights.</small></a>
+    <a href="https://www.annualcreditreport.com/" target="_blank" rel="noopener"><span class="host">annualcreditreport.com</span><strong>Free credit reports</strong><small>The official site for free reports from all three bureaus.</small></a>
+    <a href="https://consumer.ftc.gov/articles/credit-scores" target="_blank" rel="noopener"><span class="host">consumer.ftc.gov</span><strong>FTC: Credit scores</strong><small>How scores work and how to protect credit.</small></a>
+    <a href="https://www.nerdwallet.com/best/credit-cards/college-student" target="_blank" rel="noopener"><span class="host">nerdwallet.com</span><strong>NerdWallet: Student cards</strong><small>Reviews and side-by-side comparisons of student cards.</small></a>
+    <a href="https://www.bankrate.com/finance/credit-cards/" target="_blank" rel="noopener"><span class="host">bankrate.com</span><strong>Bankrate: Compare cards</strong><small>Card rankings plus interest and payoff calculators.</small></a>
+    <a href="https://www.experian.com/credit-cards/" target="_blank" rel="noopener"><span class="host">experian.com</span><strong>Experian: Card marketplace</strong><small>Card details with current APRs and recommended credit levels.</small></a>
+  </div>
+  <h3>Research sources</h3>
+  <ul class="sources">
+    <li><a href="https://www.nerdwallet.com/credit-cards/reviews/discover-it-student-cash-back" target="_blank" rel="noopener">NerdWallet: Discover it Student Cash Back review</a></li>
+    <li><a href="https://www.nerdwallet.com/blog/credit-cards/discover-it-student-cash-back-vs-discover-it-student-chrome" target="_blank" rel="noopener">NerdWallet: Discover Student Cash Back vs. Student Chrome</a></li>
+    <li><a href="https://experian.com/credit/details/discover-it-student-cash-back" target="_blank" rel="noopener">Experian: Discover it Student Cash Back details</a></li>
+    <li><a href="https://experian.com/credit-cards/details/capital-one-quicksilver-student-cash-rewards-credit-card" target="_blank" rel="noopener">Experian: Capital One Quicksilver Student details</a></li>
+    <li><a href="https://www.capitalone.com/credit-cards/quicksilver/student/" target="_blank" rel="noopener">Capital One: Quicksilver Rewards for Students</a></li>
+    <li><a href="https://www.cardrates.com/details/capital-one-quicksilver-student-cash-rewards-credit-card/" target="_blank" rel="noopener">CardRates: Quicksilver Student APR and fees</a></li>
+  </ul>
+</section>
+
+<footer>Built with help from Claude, an AI assistant. Educational project, not financial advice. Card terms change often, so current rates should be verified with the issuer. Updated October 2026.</footer>
+</div>
+
+<script>
+(function(){
+  const NS="http://www.w3.org/2000/svg";
+  const el=(t,a,txt)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;return e;};
+
+  // Rewards chart
+  const r=document.getElementById("rewardsChart");
+  const data=[{g:"Year 1",a:264,b:140},{g:"Year 2+",a:132,b:90}];
+  const L=60,R=620,T=20,B=220,max=300,y=v=>B-(v/max)*(B-T);
+  for(let v=0;v<=max;v+=100){r.append(el("line",{x1:L,x2:R,y1:y(v),y2:y(v),stroke:"var(--line)"}));r.append(el("text",{x:L-10,y:y(v)+4,"text-anchor":"end"},"$"+v));}
+  const gw=(R-L)/data.length,bw=70;
+  data.forEach((d,i)=>{const cx=L+gw*i+gw/2;
+    [[d.a,"var(--card-a2)",-bw-6],[d.b,"var(--card-b2)",6]].forEach(([v,c,dx])=>{
+      r.append(el("rect",{x:cx+dx,y:y(v),width:bw,height:B-y(v),fill:c}));
+      r.append(el("text",{x:cx+dx+bw/2,y:y(v)-6,"text-anchor":"middle",class:"lbl"},"$"+v));});
+    r.append(el("text",{x:cx,y:B+24,"text-anchor":"middle",class:"lbl"},d.g));});
+
+  // Payoff simulation
+  function sim(P,apr,pay,minMode){const m=apr/1200;let b=P,months=0,interest=0;const pts=[P];
+    while(b>0.005&&months<600){const i=b*m;interest+=i;b+=i;let p=minMode?Math.max(25,b*0.01+i):pay;p=Math.min(p,b);b-=p;months++;pts.push(b);
+      if(!minMode&&p<=i+1e-9&&b>0){return {months:Infinity,interest:Infinity,pts};}}
+    return {months,interest,pts};}
+  const money=v=>"$"+v.toFixed(2);
+  const s1=sim(600,25,25,true),s2=sim(600,25,100,false),s3=sim(600,0,100,false);
+  document.getElementById("p1").textContent=money(s1.interest)+" interest";
+  document.getElementById("p1d").textContent="Paying the minimum (about $25) takes "+s1.months+" months, nearly "+(s1.months/12).toFixed(1)+" years.";
+  document.getElementById("p2").textContent=money(s2.interest)+" interest";
+  document.getElementById("p2d").textContent="Paid off in "+s2.months+" months.";
+
+  const c=document.getElementById("payoffChart");
+  const L2=56,R2=620,T2=16,B2=236,maxM=Math.ceil(s1.months/6)*6;
+  const xs=mo=>L2+(mo/maxM)*(R2-L2),ys=v=>B2-(v/600)*(B2-T2);
+  for(let v=0;v<=600;v+=200){c.append(el("line",{x1:L2,x2:R2,y1:ys(v),y2:ys(v),stroke:"var(--line)"}));c.append(el("text",{x:L2-8,y:ys(v)+4,"text-anchor":"end"},"$"+v));}
+  for(let mo=0;mo<=maxM;mo+=6){c.append(el("text",{x:xs(mo),y:B2+20,"text-anchor":"middle"},mo));}
+  c.append(el("text",{x:(L2+R2)/2,y:B2+40,"text-anchor":"middle"},"months"));
+  [[s1,"var(--warn)"],[s2,"var(--gold)"],[s3,"var(--accent)"]].forEach(([s,col])=>{
+    const d=s.pts.map((v,i)=>(i?"L":"M")+xs(i).toFixed(1)+" "+ys(v).toFixed(1)).join(" ");
+    c.append(el("path",{d,fill:"none",stroke:col,"stroke-width":3,"stroke-linejoin":"round"}));
+    c.append(el("circle",{cx:xs(s.pts.length-1),cy:ys(0),r:5,fill:col}));});
+
+  // Calculator
+  const ids=["cAmt","cApr","cPay"].map(i=>document.getElementById(i)),out=document.getElementById("cOut");
+  function calc(){const [P,a,p]=ids.map(i=>parseFloat(i.value));
+    if(!(P>0&&a>=0&&p>0)){out.textContent="The purchase amount and monthly payment must be above zero, and the APR cannot be negative.";return;}
+    const s=sim(P,a,p,false);
+    if(!isFinite(s.months)){out.textContent="At "+money(p)+" a month, the payment does not cover the interest, so the balance would never go down. A larger payment is needed.";return;}
+    out.innerHTML="Paid off in <b class='num'>"+s.months+" months</b>. Total interest: <b class='num'>"+money(s.interest)+"</b>. Total paid: <b class='num'>"+money(P+s.interest)+"</b>.";}
+  ids.forEach(i=>i.addEventListener("input",calc));calc();
+})();
+</script>
+</body>
+</html>
